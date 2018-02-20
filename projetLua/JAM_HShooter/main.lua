@@ -8,13 +8,69 @@ love.graphics.setDefaultFilter("nearest")
 -- Cette ligne permet de déboguer pas à pas dans ZeroBraneStudio
 if arg[#arg] == "-debug" then require("mobdebug").start() end
 
-testFPS=0
+math.randomseed(love.timer.getTime())
 
 player={}
-sprites = {}
-tirs = {}
+
+-- Listes d'elements
+liste_Sprites = {}
+liste_Tirs = {}
+liste_Aliens = {}
 
 sonShoot = love.audio.newSource("sons/shoot.wav", "static")
+
+-- niveau 16x12
+niveau1 = {}
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,1,0,0,0,0,0,0,3,0})
+table.insert(niveau1, {0,0,0,0,0,0,1,1,1,0,0,0,0,0,3,0})
+table.insert(niveau1, {1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2})
+
+-- Images des tuiles
+imgTuiles = {}
+local n
+for n=1,3 do
+  imgTuiles[n] = love.graphics.newImage("images/tuile_"..n..".png")
+end
+
+function CreeAlien(pType, pX, pY)
+  
+  local nomImage=""
+  if pType == 1 then
+    nomImage = "enemy1"
+  elseif pType == 2 then
+    nomImage = "enemy2"
+  elseif pType == 3 then
+    nomImage = "enemy3"
+  end
+  
+  local alien = CreeSprite(nomImage,pX,pY)
+  
+  local directionAleatoire = math.random(-1,1)
+  
+  
+  if pType == 1 then
+    alien.vX = -2
+    alien.vY = 0
+  elseif pType == 2 then
+    alien.vX = -2
+    alien.vY = directionAleatoire
+  elseif pType == 3 then
+    alien.vX = -3
+    alien.vY = -3*directionAleatoire
+  end
+  
+  table.insert(liste_Aliens, alien)
+  
+end
 
 function CreeSprite(pNomImage, pX, pY)
 
@@ -26,7 +82,7 @@ function CreeSprite(pNomImage, pX, pY)
   sprite.l = sprite.image:getWidth()
   sprite.h = sprite.image:getHeight()
   
-  table.insert(sprites, sprite)
+  table.insert(liste_Sprites, sprite)
 
   return sprite
 
@@ -40,34 +96,62 @@ function love.load()
   largeur = love.graphics.getWidth()
   hauteur = love.graphics.getHeight()
   
+  DemarreJeu()
+  
+end
+
+function DemarreJeu()
+  
   player = CreeSprite("heros", 40, hauteur/2)
-  
-  
+  CreeAlien(1,largeur-50,100)
+  CreeAlien(2,largeur-50,300)
+  CreeAlien(3,largeur-50,500)
   
 end
 
 function love.update(dt)
-  testFPS=dt
+  
   local n
-  for n=#tirs,1,-1 do
-    local tir = tirs[n]
+  
+  -- traitement des tirs
+  for n=#liste_Tirs,1,-1 do
+    local tir = liste_Tirs[n]
     tir.x = tir.x + tir.v
     
     --verifier si tir sorti de l'ecran
     if tir.y < 0 or tir.y > hauteur then
-      table.remove(tirs, n)
+      table.remove(liste_Tirs, n)
       tir.toDelete = true
     end
     if tir.x < 0 or tir.x > largeur then
-      table.remove(tirs, n)
+      table.remove(liste_Tirs, n)
       tir.toDelete = true
     end
   end
+  
+  -- traitement des aliens
+  for n=#liste_Aliens,1,-1 do
+    local alien = liste_Aliens[n]
+    alien.x = alien.x + alien.vX
+    alien.y = alien.y + alien.vY
+    
+    --verifier si alien sorti de l'ecran
+    if alien.y < 0 or alien.y > hauteur then
+      table.remove(liste_Aliens, n)
+      alien.toDelete = true
+    end
+    if alien.x < 0 or alien.x > largeur then
+      table.remove(liste_Aliens, n)
+      alien.toDelete = true
+    end
+    
+  end
+  
   -- verifier si sprite a detruire
-  for n=#sprites,1,-1 do
-    local sprite = sprites[n]
+  for n=#liste_Sprites,1,-1 do
+    local sprite = liste_Sprites[n]
     if sprite.toDelete == true then
-      table.remove(sprites, n)
+      table.remove(liste_Sprites, n)
     end
   end
   
@@ -88,14 +172,15 @@ end
 function love.draw()
   
   local n
-  for n=1, #sprites do
-    local s = sprites[n]
+  
+  for n=1, #liste_Sprites do
+    local s = liste_Sprites[n]
     love.graphics.draw(s.image, s.x, s.y, 0, 2, 2, s.l/2, s.h/2)
   end
   
-  love.graphics.print("nombre de tirs : "..#tirs,0 ,0)
-  love.graphics.print("nombre de sprites : "..#sprites,0 ,13)
-  love.graphics.print("nombre de fps : "..math.floor(60/testFPS),0 ,26)
+  love.graphics.print("nombre de tirs : "..#liste_Tirs
+,0 ,0)
+  love.graphics.print("nombre de sprites : "..#liste_Sprites,0 ,13)
   
 end
 
@@ -106,7 +191,8 @@ function love.keypressed(key)
   if key == "space" then
     local tir = CreeSprite("laser1", player.x + player.l, player.y)
     tir.v = 10
-    table.insert(tirs, tir)
+    table.insert(liste_Tirs
+, tir)
     sonShoot:play()
   end
   
