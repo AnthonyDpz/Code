@@ -21,18 +21,18 @@ sonShoot = love.audio.newSource("sons/shoot.wav", "static")
 
 -- niveau 16x12
 niveau1 = {}
-table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
-table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
-table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
-table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
-table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
-table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
-table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
-table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0})
-table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0})
-table.insert(niveau1, {0,0,0,0,0,0,0,1,0,0,0,0,0,0,3,0})
-table.insert(niveau1, {0,0,0,0,0,0,1,1,1,0,0,0,0,0,3,0})
-table.insert(niveau1, {1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,0,1,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {0,0,0,0,0,0,1,1,1,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+table.insert(niveau1, {1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,3,3,3,3,2,2,2,2,1,1,1,1,1,3,3})
 
 -- Images des tuiles
 imgTuiles = {}
@@ -40,6 +40,10 @@ local n
 for n=1,3 do
   imgTuiles[n] = love.graphics.newImage("images/tuile_"..n..".png")
 end
+
+--Camera
+camera = {}
+camera.x = 0
 
 function CreeAlien(pType, pX, pY)
   
@@ -101,15 +105,21 @@ function love.load()
 end
 
 function DemarreJeu()
-  
+  --raz player
   player = CreeSprite("heros", 40, hauteur/2)
+  --raz alien
   CreeAlien(1,largeur-50,100)
   CreeAlien(2,largeur-50,300)
   CreeAlien(3,largeur-50,500)
-  
+  --raz camera
+  camera.x = 0
 end
 
 function love.update(dt)
+  
+  --avance camera
+  camera.x = camera.x - 1
+
   
   local n
   
@@ -170,7 +180,25 @@ function love.update(dt)
 end
 
 function love.draw()
+
+  -- dessin du niveau
+  local nbLignes = #niveau1
+  local ligne,colonne
+  local x = 0 + camera.x
+  local y = 0 
   
+  for ligne=1, nbLignes do
+    for colonne=1, 32 do
+      local tuile = niveau1[ligne][colonne]
+      if tuile > 0 then
+        love.graphics.draw(imgTuiles[tuile],x,y,0,2,2)
+      end
+      x = x + 64
+    end
+    x= camera.x
+    y = y + 64
+  end
+    
   local n
   
   for n=1, #liste_Sprites do
@@ -178,8 +206,7 @@ function love.draw()
     love.graphics.draw(s.image, s.x, s.y, 0, 2, 2, s.l/2, s.h/2)
   end
   
-  love.graphics.print("nombre de tirs : "..#liste_Tirs
-,0 ,0)
+  love.graphics.print("nombre de tirs : "..#liste_Tirs,0 ,0)
   love.graphics.print("nombre de sprites : "..#liste_Sprites,0 ,13)
   
 end
@@ -191,9 +218,15 @@ function love.keypressed(key)
   if key == "space" then
     local tir = CreeSprite("laser1", player.x + player.l, player.y)
     tir.v = 10
-    table.insert(liste_Tirs
-, tir)
+    table.insert(liste_Tirs, tir)
     sonShoot:play()
+  end
+  
+  if key == "escape" then
+    liste_Sprites = {}
+    liste_Tirs = {}
+    liste_Aliens = {}
+    DemarreJeu()
   end
   
 end
