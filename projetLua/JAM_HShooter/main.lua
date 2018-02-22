@@ -17,7 +17,9 @@ liste_Sprites = {}
 liste_Tirs = {}
 liste_Aliens = {}
 
+-- charge les sons du jeu
 sonShoot = love.audio.newSource("sons/shoot.wav", "static")
+sonExplode = love.audio.newSource("sons/explode_touch.wav", "static")
 
 -- niveau 16x12
 niveau1 = {}
@@ -32,7 +34,7 @@ table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 table.insert(niveau1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
 table.insert(niveau1, {0,0,0,0,0,0,0,1,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
 table.insert(niveau1, {0,0,0,0,0,0,1,1,1,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
-table.insert(niveau1, {1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,3,3,3,3,2,2,2,2,1,1,1,1,1,3,3})
+table.insert(niveau1, {1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,3,3,3,3,2,2,2,2,1,1,3,1,1,3,3})
 
 -- Images des tuiles
 imgTuiles = {}
@@ -44,6 +46,35 @@ end
 --Camera
 camera = {}
 camera.x = 0
+camera.vitesse = -2
+
+-- fonction de calcul de collision
+function collide(a1, a2)
+  if (a1==a2) then return false end
+  local dx = a1.x - a2.x
+  local dy = a1.y - a2.y
+  if (math.abs(dx) < a1.image:getWidth()+a2.image:getWidth()) then
+    if (math.abs(dy) < a1.image:getHeight()+a2.image:getHeight()) then
+      return true
+    end
+  end
+  return false
+end
+
+-- calcul d'angle entre 2 pts
+function math.angle(x1,y1, x2,y2) 
+  return math.atan2(y2-y1, x2-x1)
+end
+
+function CreeTir(pType, pNomImage, pX, pY, pVitesseX, pVitesseY)
+  local tir = CreeSprite(pNomImage, pX, pY)
+  tir.type = pType
+  tir.vX = pVitesseX
+  tir.vY = pVitesseY
+  table.insert(liste_Tirs, tir)
+  sonShoot:stop()
+  sonShoot:play()
+end
 
 function CreeAlien(pType, pX, pY)
   
@@ -54,22 +85,35 @@ function CreeAlien(pType, pX, pY)
     nomImage = "enemy2"
   elseif pType == 3 then
     nomImage = "enemy3"
+    elseif pType == 4 then
+    nomImage = "tourelle"
   end
   
   local alien = CreeSprite(nomImage,pX,pY)
+  
+  alien.type = pType
+  alien.endormi = true
+  alien.chronoTir = 0
   
   local directionAleatoire = math.random(-1,1)
   
   
   if pType == 1 then
-    alien.vX = -2
-    alien.vY = 0
-  elseif pType == 2 then
-    alien.vX = -2
-    alien.vY = directionAleatoire
-  elseif pType == 3 then
     alien.vX = -3
-    alien.vY = -3*directionAleatoire
+    alien.vY = 0
+    alien.energie = 1
+  elseif pType == 2 then
+    alien.vX = -3
+    alien.vY = directionAleatoire
+    alien.energie = 2
+  elseif pType == 3 then
+    alien.vX = -4
+    alien.vY = -4*directionAleatoire
+    alien.energie = 3
+  elseif pType == 4 then
+    alien.vX = camera.vitesse
+    alien.vY = 0
+    alien.energie = 2
   end
   
   table.insert(liste_Aliens, alien)
@@ -107,10 +151,16 @@ end
 function DemarreJeu()
   --raz player
   player = CreeSprite("heros", 40, hauteur/2)
+  player.vitesse = 4
   --raz alien
-  CreeAlien(1,largeur-50,100)
-  CreeAlien(2,largeur-50,300)
-  CreeAlien(3,largeur-50,500)
+  for i= 1, math.random(20,40) do
+    local typeAlien = math.random(1,4)
+    if typeAlien == 4 then
+      CreeAlien(typeAlien,(64*(math.random(16,32))),hauteur-64)
+    else
+      CreeAlien(typeAlien,(64*(math.random(16,32))),math.random(64,700))
+    end
+  end
   --raz camera
   camera.x = 0
 end
@@ -118,7 +168,7 @@ end
 function love.update(dt)
   
   --avance camera
-  camera.x = camera.x - 1
+  camera.x = camera.x + camera.vitesse
 
   
   local n
@@ -126,31 +176,104 @@ function love.update(dt)
   -- traitement des tirs
   for n=#liste_Tirs,1,-1 do
     local tir = liste_Tirs[n]
-    tir.x = tir.x + tir.v
+    tir.x = tir.x + tir.vX
+    tir.y = tir.y + tir.vY
+    
+    --verifie si on touche le player
+    if tir.type == "alien" then
+      if collide(player,tir) then
+        tir.toDelete = true
+      end
+    end
+    
+    --verifie si on touche un alien
+    if tir.type == "player" then
+      local nAlien
+      for nAlien=#liste_Aliens, 1, -1 do
+        local alien = liste_Aliens[nAlien]
+        if collide(tir,alien) == true then
+          tir.toDelete = true
+          if alien.energie > 0 then
+            alien.energie = alien.energie - 1
+          elseif alien.energie == 0 then
+            sonExplode:stop()
+            sonExplode:play()
+            alien.toDelete = true
+            table.remove(liste_Aliens, nAlien)
+          end
+        end
+      end
+    end
     
     --verifier si tir sorti de l'ecran
     if tir.y < 0 or tir.y > hauteur then
-      table.remove(liste_Tirs, n)
       tir.toDelete = true
     end
     if tir.x < 0 or tir.x > largeur then
-      table.remove(liste_Tirs, n)
       tir.toDelete = true
     end
+    
+    if tir.toDelete == true then
+      table.remove(liste_Tirs, n)
+    end
+    
   end
   
   -- traitement des aliens
   for n=#liste_Aliens,1,-1 do
     local alien = liste_Aliens[n]
-    alien.x = alien.x + alien.vX
-    alien.y = alien.y + alien.vY
+    
+    if alien.x < largeur then
+      alien.endormi = false
+    end
+    
+    if alien.endormi == false then
+      
+      local vX, vY
+      local angle
+      angle = math.angle(alien.x,alien.y, player.x, player.y)
+      vX = math.cos(angle)
+      vY = math.sin(angle)
+      
+      if alien.type == 1 then
+        alien.chronoTir = alien.chronoTir +1
+        if alien.chronoTir >= 60 then
+          alien.chronoTir = 0
+          CreeTir("alien","laser2", alien.x-(64/2), alien.y, -10, 0)
+        end
+      elseif alien.type == 2 then
+        alien.chronoTir = alien.chronoTir +1
+        if alien.chronoTir >= 50 then
+          alien.chronoTir = 0
+          CreeTir("alien","laser2", alien.x-(64/2), alien.y, -10, 0)
+        end
+      elseif alien.type == 3 then
+        alien.chronoTir = alien.chronoTir +1
+        if alien.chronoTir >= 40 then
+          alien.chronoTir = 0
+          CreeTir("alien","laser2", alien.x-(64/2), alien.y, 10*vX, 10*vY)
+          CreeTir("alien","laser2", alien.x-(64/2), alien.y, -15, 0)
+        end
+      else --alien type 4 "tourelle"
+        alien.chronoTir = alien.chronoTir +1
+        if alien.chronoTir >= 30 then
+          alien.chronoTir = 0
+          CreeTir("alien","laser2", alien.x-(64/2), alien.y, 10*vX, 10*vY)
+        end
+      end
+      alien.x = alien.x + alien.vX
+      alien.y = alien.y + alien.vY
+    else
+      alien.x = alien.x + camera.vitesse
+    end
     
     --verifier si alien sorti de l'ecran
     if alien.y < 0 or alien.y > hauteur then
       table.remove(liste_Aliens, n)
       alien.toDelete = true
     end
-    if alien.x < 0 or alien.x > largeur then
+    --if alien.x < 0 or alien.x > largeur then
+    if alien.x < 0 then
       table.remove(liste_Aliens, n)
       alien.toDelete = true
     end
@@ -160,22 +283,22 @@ function love.update(dt)
   -- verifier si sprite a detruire
   for n=#liste_Sprites,1,-1 do
     local sprite = liste_Sprites[n]
-    if sprite.toDelete == true then
+    if sprite.toDelete == true or (sprite.vX == 0 and sprite.vY == 0) then
       table.remove(liste_Sprites, n)
     end
   end
   
   if love.keyboard.isDown("right") and player.x < largeur then
-    player.x = player.x + 2
+    player.x = player.x + player.vitesse
   end
   if love.keyboard.isDown("left") and player.x > 0 then
-    player.x = player.x - 2
+    player.x = player.x - player.vitesse
   end
   if love.keyboard.isDown("up") and player.y > 0 then
-    player.y = player.y - 2
+    player.y = player.y - player.vitesse
   end
   if love.keyboard.isDown("down") and player.y < hauteur then
-    player.y = player.y + 2
+    player.y = player.y + player.vitesse
   end
 end
 
@@ -216,10 +339,7 @@ function love.keypressed(key)
   print(key)
   
   if key == "space" then
-    local tir = CreeSprite("laser1", player.x + player.l, player.y)
-    tir.v = 10
-    table.insert(liste_Tirs, tir)
-    sonShoot:play()
+    CreeTir("player","laser1", player.x + player.l, player.y, 10, 0)
   end
   
   if key == "escape" then
