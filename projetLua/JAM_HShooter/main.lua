@@ -384,7 +384,7 @@ function updateJeu()
 end
 
 function updateMenu()
-      
+      DemarreJeu()
 end
 
 function updateGameOver()
@@ -396,7 +396,7 @@ function updateGameOver()
 end
 
 function updateVictoire()
-
+DemarreJeu()
 end
 
 function love.update(dt)
@@ -473,13 +473,18 @@ function love.keypressed(key)
     end
     if key == "escape" then
       ecran_courant = "menu"
+      
     end
   elseif ecran_courant == "menu" then
     if key =="space" then
       ecran_courant = "jeu"
     end
   elseif ecran_courant == "gameOver" then
-    if key =="space" then
+    if key =="return" then
+      ecran_courant = "menu"
+    end
+  elseif ecran_courant == "victoire" then
+    if key =="return" then
       ecran_courant = "menu"
     end
   end
