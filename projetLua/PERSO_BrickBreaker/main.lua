@@ -2,8 +2,7 @@
 io.stdout:setvbuf('no')
 
 -- deboguage pas à pas
-if arg[#arg] == "-debug" then
-  require("mobdebug").start()
+if arg[#arg] == "-debug" then require("mobdebug").start()
 end
 
 local pad = {}
@@ -33,11 +32,22 @@ function love.load()
   
   pad.y = hauteur - pad.hauteur
   
+  --ecran de debut set a menu
+  actualState = "menu"
+  
+  --chargement des differents ecrans
+  imgMenu = love.graphics.newImage("/images/menu.jpg")
+  imgGameOver = love.graphics.newImage("/images/gameOver.jpg")
+  imgGameOver = love.graphics.newImage("/images/gameOver.jpg")
+  
+  -- initialise le jeu
+  Demarre()
+  
 end -- fin de function load
 
 function love.update(dt)
   
-  Demarre()
+  
   
   pad.x = love.mouse.getX()
   
@@ -51,18 +61,65 @@ function love.update(dt)
   
 end -- fin de function update
 
-function love.draw()
-  
+function menu()
+  love.graphics.draw(imgMenu,0,0)
+end
+function game()
   -- dessin du pad
   love.graphics.rectangle(pad.drawMode, pad.x - (pad.largeur/2), pad.y, pad.largeur, pad.hauteur)
-  
   -- dessin de la balle
   love.graphics.circle(ball.drawMode, ball.x, ball.y, ball.rayon)
+end
+function gameOver()
+end
+
+
+function love.draw()
+  
+  if actualState == "menu" then 
+    menu()
+  end
+  if actualState == "game" then
+    game()
+  end
+  if actualState == "gameOver" then
+    gameOver()
+  end
   
 end -- fin de function draw
 
 function love.keypressed(key)
   
-  print(key)
+  -- Menu key press
+  if actualState == "menu" then 
+    if key == "space" then 
+      actualState = "game"
+    end
+    if key == "escape" then
+      love.event.quit()
+    end
+    
+  end -- end menu key press
+  
+  -- Game key press
+  if actualState == "game" then
+    if key == "escape" then
+      actualState = "menu"
+    end
+    if key == "Right Clic" then 
+      ball.colle = false
+    end
+    
+  end -- end game key press
+  
+  -- GameOver key press
+  if actualState == "gameOver" then
+    if key == "escape" then
+      actualState = "menu"
+    end
+    
+  end -- end GameOver key press
+  
+  print("debug: "..key)
   
 end -- fin de function keypressed
