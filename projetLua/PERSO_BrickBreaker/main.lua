@@ -18,10 +18,25 @@ ball.y = 0
 ball.rayon = 10
 ball.colle = false
 ball.drawMode = "fill"
+ball.vX = 0
+ball.vY = 0
+
+local brique = {}
+local niveau = {}
 
 function Demarre()
   
   ball.colle = true
+  
+  niveau = {}
+  
+  for l=1,6 do
+    niveau[l] = {}
+    for c=1,15 do
+      niveau[l][c] = 1
+    end
+  end
+  
   
 end
 
@@ -29,6 +44,9 @@ function love.load()
   
   largeur = love.graphics.getWidth()
   hauteur = love.graphics.getHeight()
+  
+  brique.hauteur = 25
+  brique.largeur = largeur/15
   
   pad.y = hauteur - pad.hauteur
   
@@ -38,7 +56,7 @@ function love.load()
   --chargement des differents ecrans
   imgMenu = love.graphics.newImage("/images/menu.jpg")
   imgGameOver = love.graphics.newImage("/images/gameOver.jpg")
-  imgGameOver = love.graphics.newImage("/images/gameOver.jpg")
+  imgVictory = love.graphics.newImage("/images/victory.jpg")
   
   -- initialise le jeu
   Demarre()
@@ -47,43 +65,99 @@ end -- fin de function load
 
 function love.update(dt)
   
-  
-  
   pad.x = love.mouse.getX()
   
   if ball.colle == true then
-    
     ball.x = pad.x
-    ball.y = hauteur - (pad.hauteur + ball.rayon)
+    ball.y = pad.y - (pad.hauteur/2 + ball.rayon)
     
+  else
+    ball.x = ball.x + (ball.vX*dt)
+    ball.y = ball.y + (ball.vY*dt)
+  end
+  -- collision avec une brique ?
+  local c = math.floor(ball.x/brique.largeur)+1
+  local l = math.floor(ball.y/brique.hauteur)+1
+  
+  if l >= 1 and l <= #niveau and c >= 1 and c <= 15 then
+    if niveau[l][c] == 1 then
+      ball.vY = 0 - ball.vY
+      niveau[l][c] = 0
+    end
+  end
+  
+  -- collision avec les bords
+  if ball.x > largeur then
+    ball.vX = 0 - ball.vX
+    ball.x = largeur
+  end
+  if ball.x < 0 then
+      ball.vX = 0 - ball.vX
+      ball.x = 0
+  end
+  if ball.y < 0 then
+    ball.vY = 0 - ball.vY
+    ball.y = 0
+  end
+  if ball.y > hauteur then
+    -- on perd une balle
+    ball.colle = true
+  end
+  
+  -- test de collision avec le pad
+  local posCollisionPadY = pad.y - (pad.hauteur/2) - ball.rayon
+  if ball.y > posCollisionPadY then
+    local dist = math.abs(pad.x - ball.x)
+    if dist < pad.largeur/2 then
+      ball.vY = 0 - ball.vY
+      ball.y = posCollisionPadY
+    end
   end
   
   
+  
+  
+
 end -- fin de function update
 
-function menu()
+function drawMenu()
   love.graphics.draw(imgMenu,0,0)
 end
-function game()
+function drawGame()
   -- dessin du pad
-  love.graphics.rectangle(pad.drawMode, pad.x - (pad.largeur/2), pad.y, pad.largeur, pad.hauteur)
+  love.graphics.rectangle(pad.drawMode, pad.x - (pad.largeur/2), pad.y-(pad.hauteur/2), pad.largeur, pad.hauteur)
   -- dessin de la balle
   love.graphics.circle(ball.drawMode, ball.x, ball.y, ball.rayon)
+  -- dessin des briques
+  local bx,by = 0,0
+  for l=1,6 do
+    bx = 0
+    for c=1,15 do
+      if niveau[l][c] == 1 then
+        --dessine une brique
+        love.graphics.rectangle("fill",bx+1,by+1,brique.largeur-2,brique.hauteur-2)
+      end
+      bx = bx + brique.largeur
+    end
+    by = by + brique.hauteur
+  end
+  
 end
-function gameOver()
+function drawGameOver()
+  love.graphics.draw(imgGameOver,0,0)
 end
 
 
 function love.draw()
   
   if actualState == "menu" then 
-    menu()
+    drawMenu()
   end
   if actualState == "game" then
-    game()
+    drawGame()
   end
   if actualState == "gameOver" then
-    gameOver()
+    drawGameOver()
   end
   
 end -- fin de function draw
@@ -92,7 +166,8 @@ function love.keypressed(key)
   
   -- Menu key press
   if actualState == "menu" then 
-    if key == "space" then 
+    if key == "space" then
+      Demarre()
       actualState = "game"
     end
     if key == "escape" then
@@ -106,7 +181,7 @@ function love.keypressed(key)
     if key == "escape" then
       actualState = "menu"
     end
-    if key == "Right Clic" then 
+    if key == "Right Clic" then -- TODO here
       ball.colle = false
     end
     
@@ -123,3 +198,14 @@ function love.keypressed(key)
   print("debug: "..key)
   
 end -- fin de function keypressed
+
+function love.mousepressed(x, y, n)
+    if ball.colle == true then
+      ball.colle = false
+      ball.vX = 200
+      ball.vY = -200
+    end
+    
+end
+
+-- test la collision avec le pad
