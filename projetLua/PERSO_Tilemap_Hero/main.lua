@@ -8,7 +8,6 @@ love.graphics.setDefaultFilter("nearest")
 -- Cette ligne permet de déboguer pas à pas dans ZeroBraneStudio
 if arg[#arg] == "-debug" then require("mobdebug").start() end
 
---Atelier tilemap
 local myGame = require("game")
 
 function love.load()
@@ -19,18 +18,16 @@ function love.load()
   largeur = love.graphics.getWidth()
   hauteur = love.graphics.getHeight()
   
-  --Atelier tilemap
   myGame.Load()
   
 end
 
 function love.update(dt)
-
+  myGame.Update(dt)
 end
 
 function love.draw()
   
-  --Atelier tilemap
   myGame.Draw()
 
 end
