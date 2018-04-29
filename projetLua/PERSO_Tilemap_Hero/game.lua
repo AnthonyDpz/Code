@@ -84,8 +84,7 @@ function Game.Update(dt)
 end
 
 function Game.Draw()
-  local c,l
-  
+    
   for l=1,Game.Map.MAP_HEIGHT do
     for c=1,Game.Map.MAP_WIDTH do
       local id = Game.Map.Grid[l][c]
