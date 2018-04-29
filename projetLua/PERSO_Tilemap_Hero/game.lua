@@ -77,6 +77,14 @@ function Game.Load()
   print("Game:Chargement des textures terminées...")
 end
 
+function Game.Map.IsSolid(pID)
+  local tileType = Game.TileTypes[pID]
+  if tileType == "Sea" or tileType == "Tree" or tileType == "Rock" then
+    return true
+  end
+  return false
+end
+
 function Game.Update(dt)
   
   Game.Hero.Update(Game.Map, dt)
