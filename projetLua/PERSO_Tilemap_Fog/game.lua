@@ -75,6 +75,17 @@ function Game.Load()
   Game.TileTypes[129] = "Rock"
 
   print("Game:Chargement des textures terminées...")
+  
+  Game.Map.FogGrid =  {}
+local c,l
+for l=1,Game.Map.MAP_HEIGHT do
+  Game.Map.FogGrid[l] = {}
+    for c=1,Game.Map.MAP_WIDTH do
+      Game.Map.FogGrid[l][c] = 1
+    end
+  end
+  --Game.Map.clearFog(Game.Hero.line, Game.Hero.column)
+  Game.Map.clearFog2(Game.Hero.line, Game.Hero.column)
 end
 
 function Game.Map.isSolid(pID)
@@ -91,6 +102,32 @@ function Game.Update(dt)
   
 end
 
+function Game.Map.clearFog(pLine, pCol)
+  for l=pLine-1,pLine+1 do
+    for c=pCol-1,pCol+1 do
+      if c>0 and c<=Game.Map.MAP_WIDTH and l>0 and l<=Game.Map.MAP_HEIGHT then
+        Game.Map.FogGrid[l][c] = 0
+      end
+    end
+  end
+end
+
+function Game.Map.clearFog2(pLine, pCol)
+  for l=1,Game.Map.MAP_HEIGHT do
+    for c=1,Game.Map.MAP_WIDTH do
+      if c>0 and c<=Game.Map.MAP_WIDTH and l>0 and l<=Game.Map.MAP_HEIGHT then
+        local dist = math.dist(c,l,pCol,pLine)
+        if dist < 5 then 
+          local alpha = dist / 5
+          if Game.Map.FogGrid[l][c] > alpha then
+            Game.Map.FogGrid[l][c] = alpha
+          end
+        end
+      end
+    end
+  end
+end
+
 function Game.Draw()
     
   for l=1,Game.Map.MAP_HEIGHT do
@@ -98,7 +135,14 @@ function Game.Draw()
       local id = Game.Map.Grid[l][c]
       local texQuad = Game.TileTextures[id]
       if texQuad ~= nil then
-        love.graphics.draw(Game.TileSheet, texQuad, (c-1)*Game.Map.TILE_WIDTH, (l-1)*Game.Map.TILE_HEIGHT)
+        local x = (c-1)*Game.Map.TILE_WIDTH 
+        local y = (l-1)*Game.Map.TILE_HEIGHT
+        love.graphics.draw(Game.TileSheet, texQuad, x, y)
+        if Game.Map.FogGrid[l][c] > 0 then
+          love.graphics.setColor(0,0,0,255*Game.Map.FogGrid[l][c]) --deprecated
+          love.graphics.rectangle("fill",x,y,Game.Map.TILE_WIDTH,Game.Map.TILE_HEIGHT)
+          love.graphics.setColor(255,255,255)--deprecated
+        end
       end
     end
   end

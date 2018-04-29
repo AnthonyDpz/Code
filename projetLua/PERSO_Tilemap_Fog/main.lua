@@ -8,6 +8,9 @@ love.graphics.setDefaultFilter("nearest")
 -- Cette ligne permet de déboguer pas à pas dans ZeroBraneStudio
 if arg[#arg] == "-debug" then require("mobdebug").start() end
 
+-- Returns the distance between two points.
+function math.dist(x1,y1, x2,y2) return ((x2-x1)^2+(y2-y1)^2)^0.5 end
+
 local myGame = require("game")
 
 function love.load()

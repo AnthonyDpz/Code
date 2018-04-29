@@ -6,8 +6,8 @@ hero.images[2] = love.graphics.newImage("images/player_2.png")
 hero.images[3] = love.graphics.newImage("images/player_3.png")
 hero.images[4] = love.graphics.newImage("images/player_4.png")
 hero.imgCurrent = 1
-hero.line = 1
-hero.column = 1
+hero.line = 3
+hero.column = 3
 hero.keyPressed = false
 
 function hero.Update(pMap, dt)
@@ -40,6 +40,9 @@ function hero.Update(pMap, dt)
         print("collision !")
         hero.column = old_column
         hero.line = old_line
+      else
+        --pMap.clearFog(hero.line, hero.column)
+        pMap.clearFog2(hero.line, hero.column)
       end
       
       
