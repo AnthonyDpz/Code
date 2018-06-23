@@ -21,6 +21,9 @@ function love.load()
   buttonTest1 = newButton(10,10,200,150,"Hello")
   buttonTest2 = newButton(10,200,200,150,"Hello 2")
   
+  buttonTest1:setVisible(true)
+  buttonTest2:setVisible(true)
+  
   groupTest = GUI.newGroup()
   groupTest:addElement(buttonTest1)
   groupTest:addElement(buttonTest2)

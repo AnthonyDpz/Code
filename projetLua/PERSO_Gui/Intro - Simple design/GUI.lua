@@ -6,12 +6,14 @@ function newButton(pX,pY,pW,pH,pText)
   myButton.Y = pY
   myButton.W = pW
   myButton.H = pH
+  myButton.Text = pText
   myButton.Visible = true
   
   function myButton:draw()
     if self.Visible == false then return end
     love.graphics.setColor(255,255,255)
     love.graphics.rectangle("line", self.X, self.Y, self.W, self.H)
+    love.graphics.print( self.Text, (self.W)/3, ((self.H)/2)+self.Y, 0 , 2, 2, 0, 0)
   end
   
   function myButton:setVisible(pVisible)
